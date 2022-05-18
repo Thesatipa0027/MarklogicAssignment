@@ -1,0 +1,555 @@
+<export><workspace name="PR-Assignment -fnl"><query name="create DB,Forest&amp;Server" focus="false" listorder="2" taborder="2" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">(:Creating Forest:)
+xquery version "1.0-ml";
+import module namespace admin= "http://marklogic.com/xdmp/admin" at "/MarkLogic/admin.xqy";
+  
+let $config := admin:get-configuration()
+let $forestname := "shipment-details-1"
+return 
+       if(admin:forest-exists($config, $forestname ))
+          then  concat("Forest '" , $forestname, "' already exist...!")
+          else
+          (
+           let $config := admin:forest-create($config,$forestname,xdmp:host(),())
+           return admin:save-configuration($config),
+           concat("forest '", $forestname , "' created Successfully")
+          );
+
+(:Creating database:)
+
+import module namespace admin= "http://marklogic.com/xdmp/admin" at "/MarkLogic/admin.xqy";
+
+let $config := admin:get-configuration()
+let $dbname := "shipment-details"
+return 
+        if(admin:database-exists($config, $dbname))
+            then(
+                concat("database '", $dbname , "' already exist...!")
+                  )
+            else(
+                  let $config := admin:database-create($config, $dbname, xdmp:database("Security"), xdmp:database("Schemas"))
+                  return admin:save-configuration($config),
+                  concat("database '", $dbname , "' created successfully")
+                  );
+
+(:attach forest to database :)
+
+import module namespace admin = "http://marklogic.com/xdmp/admin" at "/MarkLogic/admin.xqy";
+let $config := admin:get-configuration()
+let $forest := "shipment-details-1"
+let $database := "shipment-details"
+return 
+      if(admin:database-is-forest-employed($config, xdmp:database($database) ,xdmp:forest($forest)))
+          then (
+              concat("forest '",$forest , "' already attached to database '", $database ,"'...!" )
+                )
+          else( 
+                  let $config := admin:database-attach-forest($config,xdmp:database("shipment-details"),xdmp:forest("shipment-details-1"))
+                  return admin:save-configuration($config),
+                  concat("forest '",$forest , "' successfully attached to database '", $database ,"'...!")
+               ); 
+
+(:Creating Http Server:)
+
+import module namespace admin= "http://marklogic.com/xdmp/admin" at "/MarkLogic/admin.xqy";
+
+let $config := admin:get-configuration()
+let $group-id := admin:group-get-id($config,"Default")
+
+let $port := 8777
+let $ports := xdmp:server-port(xdmp:group-port-servers(xdmp:groups()))
+let $root := "C:\Users\Sateesh Patil\Desktop\Assignments"
+let $servername := "8777-shipment-details"
+let $databaseid := admin:database-get-id($config, "shipment-details")
+return 
+        if(1 = count($ports = $port))
+              then (
+                concat("Port '", $port ,"' is currently in use")
+              )else(let $server := admin:http-server-create($config, $group-id, $servername , $root , $port, 0, $databaseid)
+                    return admin:save-configuration($server))
+
+
+
+
+
+
+
+
+
+</query><query name="Clear DataBase" focus="false" listorder="1" taborder="1" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then(
+          for $d in fn:doc()
+          let $uri := fn:base-uri($d)
+          return xdmp:document-delete($uri),
+          "documents deleted Successfully..."
+          )else(
+            "please select the 'shipment-details' database...!"
+    )</query><query name="Updating Documents" focus="false" listorder="4" taborder="4" active="true" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then(   for $d in fn:doc()//o:order
+            let $count := count($d//o:items/o:item)
+            let $amount := fn:sum($d//o:items//o:item_price)
+            return (xdmp:node-replace($d//o:order_count,&lt;order_count xmlns="shipment"&gt;{$count}&lt;/order_count&gt;),
+                    xdmp:node-replace($d//o:order_amount,&lt;order_amount xmlns="shipment"&gt;{$amount}&lt;/order_amount&gt;))
+         )else(
+                  "please select the 'shipment-details' database...!"
+              );
+
+declare namespace o = "shipment";
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then(   for $d in fn:doc()
+            let $shipmentweight := fn:sum($d//o:item_weight)
+            return (xdmp:node-replace($d//o:shipment_weight, &lt;shipment_weight xmlns ="shipment"&gt; {$shipmentweight}&lt;/shipment_weight&gt;))
+            
+        )else(
+                "please select the 'shipment-details' database...!"
+             );
+
+"Documents updated successfully"
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    (:
+xquery version "1.0-ml";
+declare namespace o = "shipment";
+
+for $d in fn:doc()//o:order
+let $count := count($d//o:items/o:item)
+let $amount := fn:sum($d//o:items//o:item_price)
+return (xdmp:node-replace($d//o:order_count,&lt;order_count xmlns="shipment"&gt;{$count}&lt;/order_count&gt;),
+        xdmp:node-replace($d//o:order_amount,&lt;order_amount xmlns="shipment"&gt;{$amount}&lt;/order_amount&gt;));
+
+
+xquery version "1.0-ml";
+declare namespace o = "shipment";
+for $d in fn:doc()
+let $shipmentweight := fn:sum($d//o:item_weight)
+return (xdmp:node-replace($d//o:shipment_weight, &lt;shipment_weight xmlns ="shipment"&gt; {$shipmentweight}&lt;/shipment_weight&gt;));
+:)
+</query><query name="Get From Collection" focus="false" listorder="6" taborder="6" active="true" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+(: shipment , Bangalore , Davanagere , Hubli :)
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then(
+          for $doc in fn:collection("Bangalore")
+          return $doc          
+        )else(
+                    "please select the 'shipment-details' database...!"
+              )
+              
+
+
+
+
+
+
+
+
+
+
+</query><query name="amount gt 10000" focus="false" listorder="7" taborder="7" active="true" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+
+declare namespace s = "shipment";
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $d in fn:doc()
+          where $d//s:order[//s:order_amount gt 10000]
+          return $d//s:order
+         )else(
+                    "please select the 'shipment-details' database...!"
+              )
+              </query><query name="item weight lt 1000g" focus="false" listorder="8" taborder="8" active="true" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then(  for $d in fn:doc()//o:order
+             let $orderid :=$d//o:order_id
+             where $d[//o:item_weight lt 1000]
+            return 
+                for $e in $d//o:item
+                  let $itemid :=$e/o:item_id
+                  let $itemdesc :=$e/o:item_description
+                  let $itemweight := $e/o:item_weight
+                return &lt;order&gt;{($orderid,$itemid,$itemdesc,$itemweight)}&lt;/order&gt;
+         )else(
+                    "please select the 'shipment-details' database...!"
+              )
+              </query><query name="sort by item price" focus="false" listorder="9" taborder="9" active="true" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+
+declare namespace o = "shipment";
+
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( 
+           for $i in fn:doc()//o:item
+            let $itemprice := xs:double($i//o:item_price/text())
+            order by $itemprice
+           return $i
+
+         )else(
+                    "please select the 'shipment-details' database...!"
+              )</query><query name="delivered within last two days" focus="false" listorder="10" taborder="10" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $d in fn:doc()//o:order
+            let $today := fn:current-date()
+            let $deldate := xs:date($d//o:order_delivery_datetime/string())
+            where(fn:round(fn:days-from-duration(fn:current-date() - $deldate))  le 2 and $d//o:order_status = "Order Delivered")
+          return $d
+     )else(
+             "please select the 'shipment-details' database...!"
+           )</query><query name="shipmentid, orderid , status" focus="false" listorder="11" taborder="11" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $d in fn:doc()
+          let $shipmentid :=$d//o:shipment_id
+           return 
+               for $s in $d//o:order
+                 let $orderid :=$s//o:order_id
+                 let $status :=$s//o:order_status
+          return &lt;shipment&gt;{($shipmentid , $orderid , $status)}&lt;/shipment&gt;
+     )else(
+             "please select the 'shipment-details' database...!"
+           )</query><query name="shipmentid &amp; order count" focus="false" listorder="12" taborder="12" active="true" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $d in fn:doc()
+            let $shipmentid :=$d//o:shipment_id
+            let $count := fn:count($d//o:shipment_order_details/o:order)
+          return &lt;shipment&gt;{$shipmentid} &lt;order_count&gt;{$count}&lt;/order_count&gt;&lt;/shipment&gt;
+     )else(
+             "please select the 'shipment-details' database...!"
+           );
+
+
+
+
+
+
+
+</query><query name="shipments delivered &amp; order count" focus="false" listorder="13" taborder="13" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $d in fn:doc()
+          let $shipmentid :=$d//o:shipment_id
+          let $ocount := fn:count($d//o:shipment_order_details/o:order)
+          let $icount := fn:count($d//o:item)
+          where $d//o:order_status = "Order Delivered"
+          return &lt;shipment&gt;{$shipmentid} &lt;order_count&gt;{$ocount}&lt;/order_count&gt; &lt;item_count&gt; {$icount}&lt;/item_count&gt; &lt;/shipment&gt;
+     )else(
+             "please select the 'shipment-details' database...!"
+           )
+</query><query name="duplct addrss in a shipment" focus="false" listorder="14" taborder="14" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+
+(:Same Delivery Address in a Shipment:)
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $doc in fn:doc()
+          let $shipmentid := $doc//o:shipment_id
+          return 
+                for $d in distinct-values($doc//o:order_delivery_address/text())
+                where 1 &lt; count($doc//o:order_delivery_address[text() = $d])
+                          return 
+                                &lt;deliver&gt;
+                                    {$shipmentid}
+                                      {
+                                      for $i in $doc//o:order
+                                        return  &lt;order&gt;
+                                                    {$i/o:order_id}
+                                                    {$i//o:order_delivery_address}
+                                                    &lt;order_count &gt;{count($i//o:item)}&lt;/order_count&gt;
+                                                &lt;/order&gt;
+                                       }
+                                &lt;/deliver&gt;)
+           else(
+             "please select the 'shipment-details' database...!"
+               )
+
+(:
+fn:doc()//o:order_delivery_address/text()
+
+for $d in fn:doc()//o:order_id
+return $d
+
+:)
+
+(:
+fn:distinct-values(fn:doc()//o:order_delivery_address)
+
+:)
+</query><query name="Date-Tme to UTC Date-Time" focus="false" listorder="17" taborder="17" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare function local:convert($datetime as xs:dateTime) as xs:dateTime
+    {
+        let $datetime := fn:adjust-dateTime-to-timezone($datetime, xs:dayTimeDuration("P0D"))
+        return $datetime
+        
+        (:format-dateTime(xs:dateTime($datetime), "[M01]/[D01]/[Y0001]  [H01]:[m01]:[s01]"):)
+    };
+
+local:convert(fn:current-dateTime())
+
+
+
+</query><query name="Duplicate addresses" focus="false" listorder="15" taborder="15" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o ="shipment";
+(:Same Delivery Address Across the Shipments:)
+(:fn:doc()//o:order_delivery_address/text() ,:)
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $doc in fn:doc()
+          return 
+                for $d in distinct-values($doc//o:order_delivery_address/text())
+                let $shipmentid := $doc//o:shipment_id
+                where 1 &lt; count(fn:doc()//o:order_delivery_address[text() = $d])
+                          return 
+                                &lt;deliver&gt;
+                                    {$shipmentid}
+                                      {
+                                      for $i in $doc//o:order
+                                        return  &lt;order&gt;
+                                                    {$i/o:order_id}
+                                                    {$i//o:order_delivery_address}
+                                                    &lt;order_count &gt;{count($i//o:item)}&lt;/order_count&gt;
+                                                &lt;/order&gt;
+                                       }
+                                &lt;/deliver&gt;
+         )
+         else
+         (
+             "please select the 'shipment-details' database...!"
+          )
+
+(:fn:distinct-values((1,2,3,4,1,3)) =&gt; 1,2,3,4:)</query><query name="Query 3" focus="false" listorder="20" taborder="18" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare function local:interval($start-time as xs:date? , $end-time as xs:date? , $i as xs:integer?) 
+{      
+     let $gap := fn:days-from-duration($end-time - $start-time)
+     let $sd := $start-time + xs:dayTimeDuration("P1D")
+     let $ed := $sd + xs:dayTimeDuration(concat("P",$i - 1 ,"D"))
+      return     ($gap,&lt;intervalDetails&gt;
+                      &lt;interval &gt;
+                        &lt;startdatetime&gt;{$sd}&lt;/startdatetime&gt;
+                        &lt;enddatetime&gt;{$ed}&lt;/enddatetime&gt;
+                      &lt;/interval&gt;
+                    &lt;/intervalDetails&gt;,
+                    local:validate($sd,$ed,$i,$gap))
+       
+};
+declare function local:validate($start-time as xs:date? , $end-time as xs:date? , $i as xs:integer? ,$g as xs:integer?) {
+            
+            let $sd := $end-time + xs:dayTimeDuration("P1D")
+            let $ed := $sd + xs:dayTimeDuration(concat("P", $i - 1 ,"D"))   
+            let $g := $g - $i
+     return if($g &gt; $i )
+      then(      
+                ($g,
+                    &lt;intervalDetails&gt;
+                      &lt;interval &gt;
+                        &lt;startdatetime&gt;{$sd}&lt;/startdatetime&gt;
+                        &lt;enddatetime&gt;{$ed}&lt;/enddatetime&gt;
+                      &lt;/interval&gt;
+                    &lt;/intervalDetails&gt;,
+                    local:validate($sd,$ed,$i,$g))
+                   )
+       else(     
+                 if($g &lt;= 0)
+                       then(
+
+                       )
+                       else(
+                              let $ed := $sd + xs:dayTimeDuration(concat("P", $g -1 ,"D"))
+                 return ($g,&lt;intervalDetails&gt;
+                      &lt;interval &gt;
+                        &lt;startdatetime&gt;{$sd}&lt;/startdatetime&gt;
+                        &lt;enddatetime&gt;{$ed}&lt;/enddatetime&gt;
+                      &lt;/interval&gt;
+                    &lt;/intervalDetails&gt;)
+                          )
+           )
+};
+local:interval(xs:date("2022-03-10"),xs:date("2022-03-20"),3)</query><query name="Load Documents" focus="false" listorder="3" taborder="3" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace s = "shipment";
+(:Loading Data:)
+declare namespace dir = "http://marklogic.com/xdmp/directory";
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then(
+    for $d in xdmp:filesystem-directory("D:\Assignments\Data")//dir:entry
+            return xdmp:document-load($d//dir:pathname,
+            &lt;options xmlns="xdmp:document-load"&gt;
+                &lt;uri&gt;/shipments/{$d//dir:filename/string()}&lt;/uri&gt;
+                &lt;collections&gt;
+                    &lt;collection&gt;shipments&lt;/collection&gt;
+                &lt;/collections&gt;
+            &lt;/options&gt;),
+            "documents loaded successfully..."
+    )else(
+            "please select the 'shipment-details' database...!"
+    )
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+
+
+(:
+    
+    xquery version "1.0-ml";
+declare namespace s = "shipment";
+(:Loading Data:)
+declare namespace dir = "http://marklogic.com/xdmp/directory";
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then(
+    for $d in xdmp:filesystem-directory("D:\Assignments\Data")//dir:entry
+            return xdmp:document-load($d//dir:pathname,
+            &lt;options xmlns="xdmp:document-load"&gt;
+                &lt;uri&gt;/shipments/{$d//dir:filename/string()}&lt;/uri&gt;
+                &lt;collections&gt;
+                    &lt;collection&gt;shipment&lt;/collection&gt;
+                   
+                    {
+                    if($d//dir:filename/string()[contains(.,'3')])
+                    then &lt;collection&gt;shipment3&lt;/collection&gt;
+                    else ()
+                    }
+                   
+                &lt;/collections&gt;
+            &lt;/options&gt;),
+            "documents loaded successfully..."
+    )else(
+            "please select the 'shipment-details' database...!"
+    )
+    
+    :)
+    
+    
+   
+                              
+    
+    
+    
+   
+                              </query><query name="add to collections" focus="false" listorder="5" taborder="5" active="true" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace s="shipment";
+
+if(xdmp:database-name(xdmp:database())="shipment-details")
+    then(for $d in fn:doc()
+          let $doc := $d
+            return  
+             xdmp:document-insert(
+              xdmp:node-uri($d),$doc,
+              &lt;options xmlns="xdmp:document-insert"&gt;  
+                &lt;collections&gt;
+                   {
+                       if($d//s:shipment_delivery_address[contains(.,'Bangalore')])
+                       then &lt;collection&gt;Bangalore&lt;/collection&gt;
+                       else ()
+                   }
+                   {
+                       if($d//s:shipment_delivery_address[contains(.,'Hubli')])
+                       then &lt;collection&gt;Hubli&lt;/collection&gt;
+                       else ()
+                   }
+                   {
+                       if($d//s:shipment_delivery_address[contains(.,'Davanagere')])
+                       then &lt;collection&gt;Davanagere&lt;/collection&gt;
+                       else ()
+                   }
+                  {for $coll in xdmp:document-get-collections(xdmp:node-uri($d)) 
+                  return &lt;collection&gt;{$coll}&lt;/collection&gt;}
+                &lt;/collections&gt;
+                &lt;quality&gt;10&lt;/quality&gt;
+              &lt;/options&gt;),
+              "Documents added to collections"
+            )else(
+            "please select the 'shipment-details' database...!"
+    )
+    
+</query><query name="Query 5" focus="false" listorder="21" taborder="19" active="true" database="13201313750324348866" server="10581655424965741209" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+
+declare namespace s="shipment";
+
+for $d in fn:doc()
+  return
+xdmp:node-uri($d)
+</query><query name="shipmentid &amp; itemcount" focus="false" listorder="18" taborder="13" active="false" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+(:order_count = total_items:)
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $d in fn:doc()
+            let $shipmentid :=$d//o:shipment_id
+            let $count := fn:count($d//o:item)
+          return &lt;shipment&gt;{$shipmentid} &lt;item_count&gt;{$count}&lt;/item_count&gt;&lt;/shipment&gt;
+     )else(
+             "please select the 'shipment-details' database...!"
+           )</query><query name="shipment delivered &amp; items " focus="false" listorder="19" taborder="14" active="false" database="8136874386227317432" server="16362135443746427967" database-name="" server-name="" mode="xquery" optimize="">xquery version "1.0-ml";
+declare namespace o = "shipment";
+
+(:Shipment_id and Total Items in order:)
+ if(xdmp:database-name(xdmp:database())="shipment-details")
+    then( for $d in fn:doc()
+            let $shipmentid :=$d//o:shipment_id
+            let $count := fn:count($d//o:items//o:item)
+            where $d//o:order_status = "Order Delivered"
+          return &lt;shipment&gt;{$shipmentid} &lt;item_count&gt;{$count}&lt;/item_count&gt;&lt;/shipment&gt;
+    
+    
+     )else(
+             "please select the 'shipment-details' database...!"
+           )
+</query><query name="Interval " focus="true" listorder="16" taborder="16" active="true" database="8136874386227317432" server="241242433676461347" database-name="shipment-details" server-name="App-Services" mode="xquery" optimize="">xquery version "1.0-ml";
+declare function local:interval($start as xs:dateTime , $end as xs:dateTime , $interval as xs:string, $attrbt){
+element object{attribute interval{$attrbt}, element start{$start},element end{$start +xs:dayTimeDuration(xs:duration($interval)) - xs:dayTimeDuration("PT1M")}},
+if($start lt ($end - xs:dayTimeDuration(xs:duration($interval)) - xs:dayTimeDuration("PT1M")))
+then(
+local:interval(($start + xs:dayTimeDuration(xs:duration($interval))),$end,$interval,$attrbt+1)
+)else
+()
+};
+
+
+
+local:interval(xs:dateTime("2021-10-11T00:00:00"),xs:dateTime("2021-10-11T23:59:59"),"PT1H",1)</query></workspace></export>
